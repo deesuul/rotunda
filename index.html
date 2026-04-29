@@ -156,6 +156,24 @@
   .chart-card canvas { width: 100% !important; }
   .chart-full { grid-column: 1 / -1; }
 
+  /* ── FUN FACTS ── */
+  .fun-facts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 40px; }
+  .fun-fact-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--card-radius); padding: 26px;
+    position: relative; overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .fun-fact-card:hover { transform: translateY(-3px); border-color: #ffd700; }
+  .fun-fact-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #ffd700, #ffb547, #ffd700);
+  }
+  .fun-fact-week { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-bottom: 10px; }
+  .fun-fact-emoji { font-size: 2.4rem; margin-bottom: 14px; line-height: 1; }
+  .fun-fact-value { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: #ffd700; line-height: 1; margin-bottom: 10px; }
+  .fun-fact-text { font-size: 0.84rem; color: var(--muted); line-height: 1.65; }
+
   /* ── SETUP ── */
   .drop-zone {
     border: 2px dashed var(--border); border-radius: var(--card-radius);
@@ -268,6 +286,9 @@
         <canvas id="chartCumulative" height="220"></canvas>
       </div>
     </div>
+
+    <div class="section-title">WEEKLY FUN FACTS</div>
+    <div class="fun-facts-grid" id="fun-facts-grid"></div>
   </div>
 
   <!-- ══ SETUP VIEW ══ -->
@@ -618,6 +639,45 @@ function renderCharts() {
     },
     options: chartOptions('lbs', { min: 0 }),
   });
+
+  renderFunFacts();
+}
+
+// ══════════════════════════════════════════
+//  FUN FACTS
+// ══════════════════════════════════════════
+function renderFunFacts() {
+  const GOLD_PRICE_PER_TROY_OZ = 3300; // ~USD as of 2026
+  const TROY_OZ_PER_LB = 14.5833;
+  const fmt = n => n.toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+  const facts = [];
+
+  if (numWeeks >= 1) {
+    const week1Lost = members.reduce((sum, m) => {
+      const w1 = m.weeks[0];
+      return (w1 !== null && !isNaN(w1)) ? sum + Math.max(0, m.start - w1) : sum;
+    }, 0);
+    const troyOz   = week1Lost * TROY_OZ_PER_LB;
+    const goldValue = troyOz * GOLD_PRICE_PER_TROY_OZ;
+
+    facts.push({
+      week: 1,
+      emoji: '🪙',
+      value: `$${fmt(goldValue)}`,
+      text: `The squad shed <strong style="color:#ffd700">${week1Lost.toFixed(1)} lbs</strong> in Week 1. If that fat were pure gold, it would be worth <strong style="color:#ffd700">$${fmt(goldValue)}</strong> — that's ${troyOz.toFixed(1)} troy oz at ~$${fmt(GOLD_PRICE_PER_TROY_OZ)}/oz.`,
+    });
+  }
+
+  const container = document.getElementById('fun-facts-grid');
+  container.innerHTML = facts.map(f => `
+    <div class="fun-fact-card">
+      <div class="fun-fact-week">Week ${f.week} Fun Fact</div>
+      <div class="fun-fact-emoji">${f.emoji}</div>
+      <div class="fun-fact-value">${f.value}</div>
+      <div class="fun-fact-text">${f.text}</div>
+    </div>
+  `).join('');
 }
 
 // ══════════════════════════════════════════
